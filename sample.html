@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Call App</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        .video-container {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        video {
+            width: 300px;
+            height: 200px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            background-color: black;
+        }
+
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #notification {
+            margin-top: 20px;
+            background-color: yellow;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <p id="userIdDisplay">Your ID: <span id="userId"></span></p>
+        <input type="text" id="callToId" placeholder="Enter ID to call">
+        <button id="startCall">Start Call</button>
+        <button id="endCall" style="display: none;">End Call</button>
+        <p id="status">Status: Ready</p>
+        <div class="video-container">
+            <video id="localVideo" autoplay muted></video>
+            <video id="remoteVideo" autoplay></video>
+        </div>
+    </div>
+
+    <script>
+        let localStream;
+        let peerConnection;
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const callToIdInput = document.getElementById('callToId');
+        const startCallButton = document.getElementById('startCall');
+        const endCallButton = document.getElementById('endCall');
+        const statusDisplay = document.getElementById('status');
+        const userIdDisplay = document.getElementById('userId');
+
+        const configuration = {
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        };
+
+        let userId = generateRandomId();
+        userIdDisplay.textContent = userId;
+
+        // Store user ID in localStorage for tab recognition
+        localStorage.setItem('currentUserId', userId);
+
+        // Function to generate a unique user ID (simulating a mobile number)
+        function generateRandomId() {
+            return Math.floor(1000 + Math.random() * 9000).toString();
+        }
+
+        // Listen for incoming calls and answers via localStorage
+        window.addEventListener('storage', async (event) => {
+            if (event.key === 'callOffer' && JSON.parse(event.newValue).receiverId === userId) {
+                const callerId = JSON.parse(event.newValue).callerId;
+                statusDisplay.textContent = `Status: Incoming call from ${callerId}...`;
+
+                peerConnection = new RTCPeerConnection(configuration);
+                peerConnection.ontrack = (event) => {
+                    remoteVideo.srcObject = event.streams[0];
+                };
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        localStorage.setItem('iceCandidate', JSON.stringify({ candidate: event.candidate, receiverId: callerId }));
+                    }
+                };
+
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = localStream;
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+                const offer = JSON.parse(event.newValue).offer;
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+
+                localStorage.setItem('callAnswer', JSON.stringify({ answer, receiverId: callerId }));
+                statusDisplay.textContent = 'Status: Call Connected';
+                endCallButton.style.display = 'block';
+            }
+
+            if (event.key === 'callAnswer' && JSON.parse(event.newValue).receiverId === userId) {
+                const answer = JSON.parse(event.newValue).answer;
+                peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+                statusDisplay.textContent = 'Status: Call Connected';
+                endCallButton.style.display = 'block';
+            }
+
+            if (event.key === 'iceCandidate' && JSON.parse(event.newValue).receiverId === userId && peerConnection) {
+                const candidate = JSON.parse(event.newValue).candidate;
+                peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            }
+        });
+
+        // Start a call
+        startCallButton.onclick = async () => {
+            const callToId = callToIdInput.value;
+            if (!callToId) {
+                alert('Please enter a valid ID to call.');
+                return;
+            }
+
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localVideo.srcObject = localStream;
+
+            peerConnection = new RTCPeerConnection(configuration);
+            peerConnection.ontrack = (event) => {
+                remoteVideo.srcObject = event.streams[0];
+            };
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    localStorage.setItem('iceCandidate', JSON.stringify({ candidate: event.candidate, receiverId: callToId }));
+                }
+            };
+
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+
+            localStorage.setItem('callOffer', JSON.stringify({ offer, callerId: userId, receiverId: callToId }));
+            statusDisplay.textContent = `Status: Calling ${callToId}...`;
+        };
+
+        // End a call
+        endCallButton.onclick = () => {
+            if (peerConnection) {
+                peerConnection.close();
+                localStream.getTracks().forEach(track => track.stop());
+                statusDisplay.textContent = 'Status: Call Ended';
+                endCallButton.style.display = 'none';
+            }
+        };
+
+    </script>
+</body>
+
+
+
+</html>

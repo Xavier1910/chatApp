@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp||Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background-color: #1b1b1b;
+        }
+
+        .WaContainer {
+            margin: 100px auto;
+        }
+
+        .WaContainer img {
+            height: 200px;
+            width: 200px;
+        }
+
+        .LoginInput {
+            background-color: rgb(42, 42, 42);
+            border: none;
+            border-bottom: 1px solid white;
+            color: white !important;
+        }
+
+        .LoginInput:focus {
+            background-color: var(--primary);
+            color: white;
+            outline: none;
+            box-shadow: none;
+        }
+
+        .LoginInput::placeholder {
+            color: white;
+            opacity: 1;
+        }
+
+        .WaContainer h1 {
+            color: rgb(156, 156, 156);
+            font-weight: bold;
+            text-shadow: 2px 2px 0px #000000;
+        }
+
+        #LoginButton {
+            background-color: transparent;
+            margin: 20px auto;
+            color: #38AB38;
+            width: 100px;
+            height: 40px;
+            border: none;
+            padding: 5px;
+            border: 1px solid #38AB38;
+            cursor: pointer;
+            border-radius: 5px;
+            transform-origin: bottom;
+            transition: all .3s ease-in-out;
+        }
+        #LoginButton:hover {
+            background-color: #38AB38;
+            color: #1b1b1b;
+        }
+        input[type="number"] {
+    -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+            </div>
+            <div class="col-md-4 text-center WaContainer">
+                <img src="./assets/images/walogo.png" alt="">
+                <h1>WhatsApp</h1>
+                <br><br>
+                <div class="input-group flex-nowrap">
+                    <input type="number" class="form-control LoginInput" placeholder="Enter Mobile Number"
+                        aria-label="Username" id="LoginInput" aria-describedby="addon-wrapping">
+                </div>
+                <button type="button" id="LoginButton">Sign In</button>
+            </div>
+            <div class="col-md-4">
+            </div>
+        </div>
+    </div>
+    <script type="module">
+        import user from './assets/js/user.js';
+        let users = user();
+        document.getElementById("LoginButton").addEventListener("click", () => {
+            const userNumber = document.getElementById("LoginInput").value;
+            console.log(userNumber);
+            function getCurrentDateTime() {
+                const now = new Date();
+                const date = now.toISOString().split('T')[0]; 
+
+                const hours = String(now.getHours()).padStart(2, '0'); 
+                const minutes = String(now.getMinutes()).padStart(2, '0'); 
+                const time = `${hours}:${minutes}`;
+
+                return time ;
+            }
+
+            if(userNumber ===""){
+                alert("Please enter valid mobile number");
+            }
+            else{
+                const time = getCurrentDateTime();
+                let success = false;
+                users.data.forEach(user => {
+                if (userNumber === user.phone) {
+                    success = true;
+                    localStorage.setItem("userId", user.id);
+                    localStorage.setItem("mobile", user.phone);
+                    localStorage.setItem("name", user.name);
+                    localStorage.setItem("profile", user.profile);
+                    localStorage.setItem("about", user.about);
+                    localStorage.setItem("time", time);
+                    window.location.href = "ui.html";
+                }
+            });
+            if (!success) {
+                alert("Invalid mobile number. Please try again.");
+            }
+            }
+            
+
+        })
+
+       
+    </script>
+     
+    <script>
+        
+        
+        // var msgs =new Array("hello","hey","Morning!");
+        // for(i=0;i<msgs.length;i++){
+        //     console.log(msgs[i]+"|");
+        // }
+
+
+        num1=5
+        function cal(){
+            num1=10;
+            num2=5;
+            num3=num2*num1
+            console.log(num3);
+            
+        }
+        cal();
+    </script>
+</body>
+
+</html>
